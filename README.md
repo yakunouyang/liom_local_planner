@@ -62,6 +62,8 @@ $ catkin_make
 
     Publish a goal pose to the `/move_base_simple/goal` topic.
 
+![Screenshot from 2023-02-07 03-33-21](https://user-images.githubusercontent.com/85840949/217067437-3f08439f-3040-4b6e-939f-1355836ae4d4.png)
+
 
 2. Launch test node:
 
@@ -70,6 +72,9 @@ $ catkin_make
     ```
     
     feel free to drag the interactive obstacles.
+
+![Screenshot from 2023-02-07 03-23-38](https://user-images.githubusercontent.com/85840949/217067464-d9a65ccb-021f-499b-a509-fc0bcf6d415c.png)
+
 
 
 ## Documentation
