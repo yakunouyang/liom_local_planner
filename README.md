@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)
 ![stability-experimental](https://img.shields.io/badge/stability-experimental-orange.svg)
 
-A ROS package for motion planning for car-like robots, providing a fast and reliable local planner for autonomous vehicles. The package is designed for use in robotics applications, with a focus on navigation and control for ground vehicles.
+**(🚧 WIP)** A ROS package for motion planning for car-like robots, providing a fast and reliable local planner for autonomous vehicles. The package is designed for use in robotics applications, with a focus on navigation and control for ground vehicles.
 
 ## Citing
 
