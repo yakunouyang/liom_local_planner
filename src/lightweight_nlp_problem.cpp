@@ -19,13 +19,7 @@ namespace liom_local_planner {
 class LiomIPOPTInterface : public Ipopt::TNLP
 {
 public:
-  LiomIPOPTInterface(
-      double w_inf,
-      const Constraints &profile,
-      const FullStates &guess,
-      const PlannerConfig &config,
-      const Eigen::VectorXd &normalizer,
-      double normalizer_tf)
+  LiomIPOPTInterface(double w_inf, const Constraints &profile, const FullStates &guess, const PlannerConfig &config)
     : w_inf_(w_inf), profile_(profile), guess_(guess), config_(config) {
     nfe_ = guess_.states.size();
     nrows_ = nfe_ - 2;
@@ -361,7 +355,7 @@ LightweightProblem::LightweightProblem(std::shared_ptr<PlannerConfig> config, st
   app_.Options()->SetIntegerValue("print_level", 0);
   app_.Options()->SetIntegerValue("max_iter", config_->opti_inner_iter_max);
   app_.Options()->SetNumericValue("bound_relax_factor", 0.0);
-  app_.Options()->SetStringValue("linear_solver", "ma27");
+  app_.Options()->SetStringValue("linear_solver", "mumps");
 
   auto status = app_.Initialize();
   if (status != Ipopt::Solve_Succeeded) {
@@ -372,11 +366,9 @@ LightweightProblem::LightweightProblem(std::shared_ptr<PlannerConfig> config, st
 
 bool LightweightProblem::Solve(
     double w_inf, const Constraints &profile, const FullStates &guess, FullStates &result, double &infeasibility) {
-  Eigen::VectorXd normalizer = GetStatesNormalizerVector();
   double solver_st = GetCurrentTimestamp();
 
-  Ipopt::SmartPtr<LiomIPOPTInterface> interface = new LiomIPOPTInterface(
-      w_inf, profile, guess, *config_, normalizer, normalizer_tf_);
+  Ipopt::SmartPtr<LiomIPOPTInterface> interface = new LiomIPOPTInterface(w_inf, profile, guess, *config_);
 
   auto status = app_.OptimizeTNLP(interface);
   bool nlp_convergence = (status == Ipopt::Solve_Succeeded)

@@ -19,6 +19,8 @@ visualization_msgs::InteractiveMarker CreateMarker(int i, const math::Polygon2d 
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time::now();
   marker.name = "Obstacle " + std::to_string(i);
+  marker.pose.position.x = polygon.center().x();
+  marker.pose.position.y = polygon.center().y();
   marker.pose.orientation.w = 1.0;
 
   visualization_msgs::Marker polygon_marker;
@@ -39,11 +41,7 @@ visualization_msgs::InteractiveMarker CreateMarker(int i, const math::Polygon2d 
     pt.y = polygon.points().at(i).y();
     polygon_marker.points.push_back(pt);
   }
-
-  geometry_msgs::Point pt;
-  pt.x = polygon.points().front().x();
-  pt.y = polygon.points().front().y();
-  polygon_marker.points.push_back(pt);
+  polygon_marker.points.push_back(polygon_marker.points.front());
 
   visualization_msgs::InteractiveMarkerControl box_control;
   box_control.always_visible = true;
@@ -82,6 +80,7 @@ int main(int argc, char **argv) {
       math::Polygon2d({{-3, -3}, {-3, 3}, {3, 3}, {3, -3}}),
       math::Polygon2d({{-3, -3}, {-3, 3}, {3, 3}, {3, -3}}),
   };
+  polys[1].Move({ 10, 0 });
   auto interactive_cb = [&](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &msg) {
     int idx = msg->marker_name.back() - '1';
 
@@ -108,7 +107,7 @@ int main(int argc, char **argv) {
   goal.x = 20;
   goal.y = 20;
   goal.theta = M_PI;
-  ros::Rate r(1000);
+  ros::Rate r(10);
 
   auto start_sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1, [&](const geometry_msgs::PoseWithCovarianceStampedConstPtr &pose) {
     double x = pose->pose.pose.position.x;
@@ -125,8 +124,6 @@ int main(int argc, char **argv) {
     }
 
     start = solution.states[idx];
-
-    ROS_INFO("intial");
   });
 
   while(ros::ok()) {

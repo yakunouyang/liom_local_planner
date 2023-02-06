@@ -9,8 +9,8 @@ A ROS package for motion planning for car-like robots, providing a fast and reli
 
 If you use `liom_local_planner` in your work, please consider citing our related papers to acknowledge the research and efforts behind this package:
 
-1. B. Li et al., "Optimization-Based Trajectory Planning for Autonomous Parking With Irregularly Placed Obstacles: A Lightweight Iterative Framework," in IEEE Transactions on Intelligent Transportation Systems, vol. 23, no. 8, pp. 11970-11981, Aug. 2022, doi: [10.1109/TITS.2021.3109011](https://ieeexplore.ieee.org/abstract/document/9531561).
-2. B. Li, Y. Ouyang, L. Li and Y. Zhang, "Autonomous Driving on Curvy Roads Without Reliance on Frenet Frame: A Cartesian-Based Trajectory Planning Method," in IEEE Transactions on Intelligent Transportation Systems, vol. 23, no. 9, pp. 15729-15741, Sept. 2022, doi: [10.1109/TITS.2022.3145389](https://ieeexplore.ieee.org/abstract/document/9703250).
+ - B. Li et al., "Optimization-Based Trajectory Planning for Autonomous Parking With Irregularly Placed Obstacles: A Lightweight Iterative Framework," in IEEE Transactions on Intelligent Transportation Systems, vol. 23, no. 8, pp. 11970-11981, Aug. 2022, doi: [10.1109/TITS.2021.3109011](https://ieeexplore.ieee.org/abstract/document/9531561).
+ - B. Li, Y. Ouyang, L. Li and Y. Zhang, "Autonomous Driving on Curvy Roads Without Reliance on Frenet Frame: A Cartesian-Based Trajectory Planning Method," in IEEE Transactions on Intelligent Transportation Systems, vol. 23, no. 9, pp. 15729-15741, Sept. 2022, doi: [10.1109/TITS.2022.3145389](https://ieeexplore.ieee.org/abstract/document/9703250).
 
 
 ## Features
@@ -56,12 +56,20 @@ $ catkin_make
 
 1. Launch the simulation based on [Stage Simulator](http://wiki.ros.org/stage):
 
-```shell
-$ roslaunch liom_local_planner demo_stage.launch
-```
+    ```shell
+    $ roslaunch liom_local_planner demo_stage.launch
+    ```
 
-2. Publish a goal pose to the `/move_base_simple/goal` topic.
+    Publish a goal pose to the `/move_base_simple/goal` topic.
 
+
+2. Launch test node:
+
+    ```shell
+   roslaunch liom_local_planner demo_test.launch
+    ```
+    
+    feel free to drag the interactive obstacles.
 
 
 ## Documentation
