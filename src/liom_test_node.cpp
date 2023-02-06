@@ -19,8 +19,8 @@ visualization_msgs::InteractiveMarker CreateMarker(int i, const math::Polygon2d 
   marker.header.frame_id = "map";
   marker.header.stamp = ros::Time::now();
   marker.name = "Obstacle " + std::to_string(i);
-  marker.pose.position.x = polygon.center().x();
-  marker.pose.position.y = polygon.center().y();
+  // marker.pose.position.x = polygon.center().x();
+  // marker.pose.position.y = polygon.center().y();
   marker.pose.orientation.w = 1.0;
 
   visualization_msgs::Marker polygon_marker;
@@ -78,9 +78,7 @@ int main(int argc, char **argv) {
 
   std::vector<math::Polygon2d> polys = {
       math::Polygon2d({{-3, -3}, {-3, 3}, {3, 3}, {3, -3}}),
-      math::Polygon2d({{-3, -3}, {-3, 3}, {3, 3}, {3, -3}}),
   };
-  polys[1].Move({ 10, 0 });
   auto interactive_cb = [&](const visualization_msgs::InteractiveMarkerFeedbackConstPtr &msg) {
     int idx = msg->marker_name.back() - '1';
 
