@@ -1,0 +1,12 @@
+rolling_window: true
+update_frequency: 10.0
+publish_frequency: 10.0
+static_map: false
+always_send_full_costmap: false
+
+width: 80.0
+height: 80.0
+
+plugins:
+  - {name: obstacles_laser,           type: "costmap_2d::ObstacleLayer"}
+  - {name: inflation,                 type: "costmap_2d::InflationLayer"}

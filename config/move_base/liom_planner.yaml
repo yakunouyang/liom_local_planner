@@ -1,0 +1,41 @@
+LiomLocalPlannerROS:
+  odom_topic: odom
+  global_frame: odom
+
+  goal_xy_tolerance: 0.2
+  goal_yaw_tolerance: 0.2
+
+  # coarse path generator (Hybrid A*) parameters
+  coarse_xy_resolution: 0.2
+  coarse_theta_resolution: 0.1
+  coarse_step_size: 0.3
+  coarse_next_node_num: 6
+  coarse_grid_xy_resolution: 0.5
+  coarse_forward_penalty: 0.5
+  coarse_backward_penalty: 1.0
+  coarse_gear_change_penalty: 5.0
+  coarse_steering_penalty: 0.1
+  coarse_steering_change_penalty: 1.0
+
+  # optimization parameters
+  min_waypoints: 20
+  time_step: 0.4
+  corridor_max_iter: 1000
+  corridor_incremental_limit: 20.0
+  weight_a: 1.0
+  weight_omega: 1.0
+  max_iter: 100
+  infeasible_penalty: 1e4
+  infeasible_tolerance: 1e-4
+
+  # vehicle parameters
+  front_hang_length: 0.96
+  wheel_base: 2.80
+  rear_hang_length: 0.929
+  width: 1.942
+  max_velocity: 3.0
+  min_velocity: 0.0
+  max_acceleration: 1.0
+  max_steering: 0.7
+  max_steering_rate: 0.2
+  n_disc: 2

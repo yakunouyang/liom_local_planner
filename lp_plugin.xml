@@ -1,0 +1,7 @@
+<library path="lib/libliom_local_planner">
+    <class name ="liom_local_planner/LiomLocalPlannerROS" type="liom_local_planner::LiomLocalPlannerROS" base_class_type= "nav_core::BaseLocalPlanner">
+        <description>
+            Local planner based on LIOM (Light-weighted Iterative Optimization Method) approach
+        </description>
+    </class>
+</library>

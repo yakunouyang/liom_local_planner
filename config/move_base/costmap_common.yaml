@@ -1,0 +1,25 @@
+footprint: [[-0.929, -0.971], [3.76, -0.971], [3.76, 0.971], [-0.929, 0.971]]
+footprint_padding: 0.5
+
+global_frame: odom
+robot_base_frame: base_link
+transform_tolerance: 0.5
+
+resolution: 0.5
+
+# obstacle detect range
+obstacle_range: 40.0
+raytrace_range: 80.0
+
+#layer definitions
+static:
+  map_topic: /map
+  subscribe_to_updates: false
+
+obstacles_laser:
+  observation_sources: laser
+  laser: {data_type: LaserScan, clearing: true, marking: true, topic: /scan, inf_is_valid: true}
+
+inflation:
+  inflation_radius: 1.0
+  cost_scaling_factor: 6.0

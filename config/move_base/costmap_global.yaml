@@ -1,0 +1,11 @@
+update_frequency: 1.0
+publish_frequency: 1.0
+static_map: true
+rolling_window: false
+track_unknown_space: false
+always_send_full_costmap: false
+
+plugins:
+  - {name: static,                  type: "costmap_2d::StaticLayer"}
+  - {name: obstacle_laser,          type: "costmap_2d::ObstacleLayer"}
+  - {name: inflation,               type: "costmap_2d::InflationLayer"}
