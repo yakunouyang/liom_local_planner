@@ -4,15 +4,15 @@
 namespace liom_local_planner {
 
 struct PlannerConfig {
-   double xy_resolution = 0.2;
+   double xy_resolution = 0.5;
    double theta_resolution = 0.1;
-   double step_size = 0.3;
+   double step_size = 0.2;
    int next_node_num = 6;
-   double grid_xy_resolution = 0.5;
+   double grid_xy_resolution = 1.0;
    double forward_penalty = 0.5;
    double backward_penalty = 1.0;
    double gear_change_penalty = 5.0;
-   double steering_penalty = 0.1;
+   double steering_penalty = 0.5;
    double steering_change_penalty = 1.0;
 
   /**

@@ -136,6 +136,32 @@ void PlotPoints(const Vector &xs, const Vector &ys, double width, const Color &c
   arr_.markers.push_back(msg);
 }
 
+void PlotPoints(const Vector &xs, const Vector &ys, const std::vector<Color> &colors, double width, int id,
+                const std::string &ns) {
+  assert(xs.size() == ys.size());
+
+  visualization_msgs::Marker msg;
+  msg.header.frame_id = frame_;
+  msg.header.stamp = ros::Time();
+  msg.ns = ns.empty() ? "Points" : ns;
+  msg.id = id >= 0 ? id : arr_.markers.size();
+
+  msg.action = visualization_msgs::Marker::ADD;
+  msg.type = visualization_msgs::Marker::POINTS;
+  msg.pose.orientation.w = 1.0;
+  msg.scale.x = msg.scale.y = width;
+
+  for (size_t i = 0; i < xs.size(); i++) {
+    geometry_msgs::Point pt;
+    pt.x = xs[i];
+    pt.y = ys[i];
+    msg.points.push_back(pt);
+    msg.colors.push_back(colors[i].toColorRGBA());
+  }
+
+  arr_.markers.push_back(msg);
+}
+
 void Delete(int id, const std::string &ns) {
   visualization_msgs::Marker msg;
   msg.header.frame_id = frame_;

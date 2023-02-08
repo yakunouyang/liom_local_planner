@@ -38,6 +38,9 @@ void PlotTrajectory(const Vector &xs, const Vector &ys, const Vector &vs, double
 void PlotPoints(const Vector &xs, const Vector &ys, double width = 0.1, const Color &color = Color::White,
                 int id = -1, const std::string &ns = "");
 
+void PlotPoints(const Vector &xs, const Vector &ys, const std::vector<Color> &colors, double width = 0.1,
+                int id = -1, const std::string &ns = "");
+
 void Trigger();
 
 void Delete(int id, const std::string &ns);

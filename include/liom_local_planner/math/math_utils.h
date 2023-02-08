@@ -29,7 +29,6 @@
 #include <array>
 
 #include "vec2d.h"
-#include <boost/type_traits/function_traits.hpp>
 
 /**
  * @namespace apollo::common::math
@@ -300,17 +299,6 @@ inline std::vector<double> ARange(double start, double end, double step) {
   }
 
   return res;
-}
-
-template<class Item, class Trait>
-std::vector<typename boost::function_traits<Trait>::result_type> GetPropertyListFromList(const std::vector<Item> &data, const Trait &trait) {
-  std::vector<typename boost::function_traits<Trait>::result_type> result(data.size());
-
-  for(size_t i = 0; i < data.size(); i++) {
-    result[i] = trait(data[i]);
-  }
-
-  return result;
 }
 
 }  // namespace math

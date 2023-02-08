@@ -6,15 +6,15 @@ LiomLocalPlannerROS:
   goal_yaw_tolerance: 0.2
 
   # coarse path generator (Hybrid A*) parameters
-  coarse_xy_resolution: 0.2
+  coarse_xy_resolution: 1.0
   coarse_theta_resolution: 0.1
-  coarse_step_size: 0.3
+  coarse_step_size: 0.2
   coarse_next_node_num: 6
-  coarse_grid_xy_resolution: 0.5
-  coarse_forward_penalty: 0.5
+  coarse_grid_xy_resolution: 1.0
+  coarse_forward_penalty: 1.0
   coarse_backward_penalty: 1.0
   coarse_gear_change_penalty: 5.0
-  coarse_steering_penalty: 0.1
+  coarse_steering_penalty: 0.5
   coarse_steering_change_penalty: 1.0
 
   # optimization parameters
@@ -34,7 +34,7 @@ LiomLocalPlannerROS:
   rear_hang_length: 0.929
   width: 1.942
   max_velocity: 3.0
-  min_velocity: 0.0
+  min_velocity: -3.0
   max_acceleration: 1.0
   max_steering: 0.7
   max_steering_rate: 0.2

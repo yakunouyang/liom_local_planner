@@ -3,17 +3,26 @@
 //
 #include "liom_local_planner/coarse_path_planner.h"
 #include "liom_local_planner/math/math_utils.h"
+#include "liom_local_planner/time.h"
+#include "liom_local_planner/visualization/plot.h"
 
 #include <ompl/base/spaces/ReedsSheppStateSpace.h>
 #include <ompl/base/spaces/DubinsStateSpace.h>
 #include <ompl/base/ScopedState.h>
 #include <queue>
 
+//#define VISUALIZE_NODE_EXPANSION
+//#define VISUALIZE_GRID_MAP
+
 namespace liom_local_planner {
+
+constexpr int min_oneshot_freq = 2, max_oneshot_freq = 100;
 
 bool CoarsePathPlanner::Plan(math::Pose start, math::Pose goal, std::vector<math::Pose> &result) {
   origin_ = (math::Vec2d(start) + math::Vec2d(goal)) / 2;
   is_forward_only_ = config_->vehicle.min_velocity >= 0.0;
+  double forward_distance = config_->xy_resolution * M_SQRT2;
+  forward_num_ = std::max(1, static_cast<int>(ceil(forward_distance / config_->step_size)));
 
   grid_open_pq_ = decltype(grid_open_pq_)();
   grid_open_set_.clear();
@@ -29,8 +38,14 @@ bool CoarsePathPlanner::Plan(math::Pose start, math::Pose goal, std::vector<math
   open_pq_.emplace(start_node.index, start_node.f_cost);
   open_set_.insert({start_node.index, start_node});
 
+  double dist_start_to_goal = start.DistanceTo(goal);
   uint64_t oneshot_index = undefined_index;
   std::vector<math::Pose> oneshot_path;
+  int walked_node_count = 0;
+
+#ifdef VISUALIZE_NODE_EXPANSION
+  std::vector<double> expand_x, expand_y;
+#endif
 
   while(!open_pq_.empty()) {
     auto node_index = open_pq_.top().first;
@@ -39,12 +54,23 @@ bool CoarsePathPlanner::Plan(math::Pose start, math::Pose goal, std::vector<math
     auto &node = open_set_.at(node_index);
     node.is_closed = true;
 
+#ifdef VISUALIZE_NODE_EXPANSION
+    expand_x.push_back(node.pose.x());
+    expand_y.push_back(node.pose.y());
+#endif
+
     if(node_index == goal_node.index) {
       goal_node.pre_index = node.pre_index;
       break;
     }
 
-    if(CheckAnalyticExpansion(node, goal_node, oneshot_path)) {
+    walked_node_count++;
+
+    double scaled_heu_cost = (node.f_cost - node.g_cost) / dist_start_to_goal;
+    int oneshot_freq = static_cast<int>(min_oneshot_freq + scaled_heu_cost * (max_oneshot_freq - min_oneshot_freq));
+    bool should_check = oneshot_freq < 1 || walked_node_count % oneshot_freq == 0;
+
+    if(should_check && CheckOneshotPath(node, goal_node, oneshot_path)) {
       oneshot_index = node.index;
       break;
     }
@@ -57,17 +83,6 @@ bool CoarsePathPlanner::Plan(math::Pose start, math::Pose goal, std::vector<math
       }
 
       auto node_opened = open_set_.find(next_node.index);
-
-      if(env_->CheckPoseCollision(0.0, next_node.pose)) {
-        if(node_opened == open_set_.end()) {
-          next_node.is_closed = true;
-          open_set_.insert({next_node.index, next_node});
-        } else {
-          node_opened->second.is_closed = true;
-        }
-        continue;
-      }
-
       if(node_opened != open_set_.end() && node_opened->second.is_closed) {
         continue;
       }
@@ -79,30 +94,78 @@ bool CoarsePathPlanner::Plan(math::Pose start, math::Pose goal, std::vector<math
       if(node_opened == open_set_.end()) {
         open_set_.insert({ next_node.index, next_node });
         open_pq_.emplace( next_node.index, next_node.f_cost );
-      } else if(next_node.f_cost < node_opened->second.f_cost) {
+      }
+      else if(next_node.g_cost < node_opened->second.g_cost) {
+        node_opened->second.g_cost = next_node.g_cost;
         node_opened->second.f_cost = next_node.f_cost;
         node_opened->second.pre_index = node.index;
       }
     }
   }
 
-  if(oneshot_index != undefined_index) {
+  if(oneshot_index != undefined_index) { // successful oneshot
     result = TraversePath(oneshot_index);
     result.insert(result.end(), oneshot_path.begin(), oneshot_path.end());
-  } else if(goal_node.pre_index != undefined_index) {
+  } else if(goal_node.pre_index != undefined_index) { // traversed to goal node (unlikely)
     result = TraversePath(goal_node.index);
   } else {
     return false;
   }
+
+#ifdef VISUALIZE_NODE_EXPANSION
+  std::vector<visualization::Color> expand_colors;
+  for(int i = 0; i < expand_x.size(); i++) {
+    auto color = visualization::Color::fromHSV(120 + 120.0 * i / (expand_x.size() - 1), 1.0, 1.0);
+    expand_colors.push_back(color);
+  }
+
+  visualization::PlotPoints(expand_x, expand_y, expand_colors, 0.1, 1, "Expand Points");
+  visualization::Trigger();
+#endif
+
+#ifdef VISUALIZE_GRID_MAP
+  std::vector<double> grid_x, grid_y, grid_cost;
+  for(auto &pair: grid_open_set_) {
+    if (pair.second.is_closed && pair.second.f_cost < inf) {
+      grid_x.push_back(origin_.x() + pair.second.x_grid * config_->grid_xy_resolution);
+      grid_y.push_back(origin_.y() + pair.second.y_grid * config_->grid_xy_resolution);
+      grid_cost.push_back(pair.second.f_cost);
+    }
+  }
+
+  std::vector<visualization::Color> grid_colors;
+  double grid_max_cost = *std::max_element(grid_cost.begin(), grid_cost.end());
+  for(double cost : grid_cost) {
+    grid_colors.push_back(visualization::Color::fromHSV(120.0 + 120.0 * cost / grid_max_cost, 1.0, 1.0));
+  }
+  visualization::PlotPoints(grid_x, grid_y, grid_colors, config_->grid_xy_resolution, 1, "Grid Map");
+  visualization::Trigger();
+#endif
+
+  std::cout << "walked node: " << walked_node_count << std::endl;
 
   return true;
 }
 
 std::vector<math::Pose> CoarsePathPlanner::TraversePath(uint64_t node_index) {
   std::vector<math::Pose> result;
-  while(open_set_.find(node_index) != open_set_.end()) {
-    result.push_back(open_set_.at(node_index).pose);
-    node_index = open_set_.at(node_index).pre_index;
+  if(open_set_.find(node_index) == open_set_.end()) {
+    return result;
+  }
+
+  while(true) {
+    auto &node = open_set_.at(node_index);
+    uint64_t pre_index = node.pre_index;
+    auto pre_node = open_set_.find(pre_index);
+    if(pre_node == open_set_.end()) {
+      break;
+    }
+
+    auto path = GenerateKinematicPath(pre_node->second.pose, node.is_forward, node.steering);
+    for(int i = path.size() - 1; i > 0; i--) {
+      result.push_back(path[i]);
+    }
+    node_index = pre_index;
   }
 
   std::reverse(result.begin(), result.end());
@@ -112,9 +175,9 @@ std::vector<math::Pose> CoarsePathPlanner::TraversePath(uint64_t node_index) {
 double CoarsePathPlanner::EvaluateExpandCost(const Node3d &parent, const Node3d &node) {
   double piecewise_cost = 0.0;
   if (node.is_forward) {
-    piecewise_cost += config_->step_size * config_->forward_penalty;
+    piecewise_cost += forward_num_ * config_->step_size * config_->forward_penalty;
   } else {
-    piecewise_cost += config_->step_size * config_->backward_penalty;
+    piecewise_cost += forward_num_ * config_->step_size * config_->backward_penalty;
   }
   if (parent.is_forward != node.is_forward) {
     piecewise_cost += config_->gear_change_penalty;
@@ -140,7 +203,7 @@ constexpr int grid_directions[8][2] = {
 };
 
 constexpr double grid_direction_costs[8] = {
-    M_SQRT2, 1, M_SQRT1_2, 1, 1, M_SQRT2, 1, M_SQRT1_2
+    M_SQRT2, 1, M_SQRT2, 1, 1, M_SQRT2, 1, M_SQRT2
 };
 
 double CoarsePathPlanner::Calculate2DCost(const Node3d &node_3d) {
@@ -148,6 +211,10 @@ double CoarsePathPlanner::Calculate2DCost(const Node3d &node_3d) {
   auto dp_node = grid_open_set_.find(node_2d.index);
   if(dp_node != grid_open_set_.end() && dp_node->second.is_closed) {
     return dp_node->second.f_cost;
+  }
+
+  if(env_->CheckBoxCollision(0.0, node_2d.GenerateBox(origin_, *config_))) {
+    return inf;
   }
 
   while(!grid_open_pq_.empty()) {
@@ -197,32 +264,48 @@ double CoarsePathPlanner::Calculate2DCost(const Node3d &node_3d) {
   return inf;
 }
 
-bool CoarsePathPlanner::ExpandNextNode(const Node3d &node, int next_index, Node3d &next_node) {
-  double steering, traveled_distance;
+std::vector<math::Pose> CoarsePathPlanner::GenerateKinematicPath(math::Pose pose, int is_forward, double steering) const {
+  std::vector<math::Pose> path(forward_num_ + 1);
+  double step_size = is_forward ? config_->step_size : -config_->step_size;
 
-  double node_res = (static_cast<double>(config_->next_node_num) / 2 - 1);
-  if (next_index < static_cast<double>(config_->next_node_num) / 2) {
+  for(int i = 0; i < forward_num_; i++) {
+    path[i] = pose;
+    pose.setX(pose.x() + step_size * cos(pose.theta()));
+    pose.setY(pose.y() + step_size * sin(pose.theta()));
+    pose.setTheta(math::NormalizeAngle(pose.theta() + step_size * tan(steering) / config_->vehicle.wheel_base));
+  }
+
+  path[forward_num_] = pose;
+  return path;
+}
+
+bool CoarsePathPlanner::ExpandNextNode(const Node3d &node, int next_index, Node3d &next_node) {
+  double steering;
+  bool is_forward = next_index < static_cast<double>(config_->next_node_num) / 2;
+
+  double node_res = static_cast<double>(config_->next_node_num) / 2 - 1;
+  if (is_forward) {
     steering = -config_->vehicle.phi_max + 2 * config_->vehicle.phi_max / node_res * next_index;
-    traveled_distance = config_->step_size;
   } else {
     int index = next_index - config_->next_node_num / 2;
     steering = -config_->vehicle.phi_max + 2 * config_->vehicle.phi_max / node_res * index;
-    traveled_distance = -config_->step_size;
   }
 
-  math::Pose next_pose(
-      node.pose.x() + traveled_distance * cos(node.pose.theta()),
-      node.pose.y() + traveled_distance * sin(node.pose.theta()),
-      math::NormalizeAngle(node.pose.theta() + traveled_distance * tan(steering) / config_->vehicle.wheel_base));
+  auto path = GenerateKinematicPath(node.pose, is_forward, steering);
+  for(auto &pose: path) {
+    if(env_->CheckPoseCollision(0.0, pose)) {
+      return false;
+    }
+  }
 
-  next_node = Node3d(next_pose, origin_, *config_);
+  next_node = Node3d(path.back(), origin_, *config_);
+  next_node.is_forward = is_forward;
   next_node.steering = steering;
-  next_node.is_forward = traveled_distance > 0;
   next_node.pre_index = node.index;
   return true;
 }
 
-bool CoarsePathPlanner::CheckAnalyticExpansion(const Node3d &node, const Node3d &goal, std::vector<math::Pose> &result) {
+bool CoarsePathPlanner::CheckOneshotPath(const Node3d &node, const Node3d &goal, std::vector<math::Pose> &result) {
   if(!GenerateShortestPath(node.pose, goal.pose, result)) {
     return false;
   }

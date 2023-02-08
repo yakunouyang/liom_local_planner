@@ -37,9 +37,9 @@ private:
     Node3d() = default;
 
     Node3d(math::Pose pose, math::Vec2d origin, const PlannerConfig &config): pose(pose) {
-      x_grid = static_cast<int32_t>((pose.x() - origin.x()) / config.xy_resolution);
-      y_grid = static_cast<int32_t>((pose.y() - origin.y()) / config.xy_resolution);
-      theta_grid = static_cast<int32_t>((pose.theta() - (-M_PI)) / config.theta_resolution);
+      x_grid = static_cast<int32_t>(floor((pose.x() - origin.x()) / config.xy_resolution));
+      y_grid = static_cast<int32_t>(floor((pose.y() - origin.y()) / config.xy_resolution));
+      theta_grid = static_cast<int32_t>(floor((pose.theta() - (-M_PI)) / config.theta_resolution));
 
       assert(abs(x_grid) < 0x00FFFFFF && abs(y_grid) < 0x00FFFFFF && abs(theta_grid) < 0x00003FFF);
 
@@ -69,8 +69,8 @@ private:
     bool is_closed = false;
 
     Node2d(math::Pose pose, math::Vec2d origin, const PlannerConfig &config) {
-      x_grid = static_cast<int32_t>((pose.x() - origin.x()) / config.grid_xy_resolution);
-      y_grid = static_cast<int32_t>((pose.y() - origin.y()) / config.grid_xy_resolution);
+      x_grid = static_cast<int32_t>(floor((pose.x() - origin.x()) / config.grid_xy_resolution));
+      y_grid = static_cast<int32_t>(floor((pose.y() - origin.y()) / config.grid_xy_resolution));
 
       assert(abs(x_grid) < 0xFFFFFFFF && abs(y_grid) < 0xFFFFFFFF);
       index = (static_cast<uint64_t>(x_grid) << 32) | static_cast<uint32_t>(y_grid);
@@ -82,7 +82,7 @@ private:
 
     inline math::AABox2d GenerateBox(math::Vec2d origin, const PlannerConfig &config) const {
       math::Vec2d corner(origin.x() + config.grid_xy_resolution * x_grid, origin.y() + config.grid_xy_resolution * y_grid);
-      return { corner, config.grid_xy_resolution, config.grid_xy_resolution };
+      return { corner, config.vehicle.disc_radius * 2, config.vehicle.disc_radius * 2 };
     }
   };
 
@@ -90,6 +90,7 @@ private:
   std::shared_ptr<Environment> env_;
   math::Vec2d origin_;
   bool is_forward_only_ = false;
+  int forward_num_;
 
   struct cost_cmp {
     bool operator()(const std::pair<uint64_t, double>& left, const std::pair<uint64_t, double>& right) const {
@@ -104,6 +105,8 @@ private:
 
   std::vector<math::Pose> TraversePath(uint64_t node_index);
 
+  std::vector<math::Pose> GenerateKinematicPath(math::Pose pose, int is_forward, double steering) const;
+
   bool ExpandNextNode(const Node3d &node, int next_index, Node3d &next_node);
 
   double EvaluateExpandCost(const Node3d &parent, const Node3d &node);
@@ -112,7 +115,7 @@ private:
 
   double Calculate2DCost(const Node3d &node);
 
-  bool CheckAnalyticExpansion(const Node3d &node, const Node3d &goal, std::vector<math::Pose> &result);
+  bool CheckOneshotPath(const Node3d &node, const Node3d &goal, std::vector<math::Pose> &result);
 
   bool GenerateShortestPath(math::Pose start, math::Pose goal, std::vector<math::Pose> &result);
 

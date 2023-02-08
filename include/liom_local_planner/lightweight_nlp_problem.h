@@ -35,7 +35,7 @@ private:
     int ncols = NVar + config_->vehicle.n_disc * 2;
     Eigen::Map<const Eigen::ArrayXXd> states(x0 + 1, nfe-2, ncols); // skip variable tf
     for(int i = 1; i < nfe - 1; i++) {
-      result.states[i] = TrajectoryPoint(states.row(i-1));
+      result.states[i] = TrajectoryPoint(states.row(i-1).leftCols<NVar>());
     }
     return result;
   }
